@@ -1,6 +1,7 @@
 // Import all dependencies, mostly using destructuring for better view.
-import { ClientConfig, Client, middleware, MiddlewareConfig, WebhookEvent, TextMessage, MessageAPIResponseBase } from '@line/bot-sdk';
+import { ClientConfig, Client, middleware, MiddlewareConfig, WebhookEvent, TextMessage, MessageAPIResponseBase, ImageMessage } from '@line/bot-sdk';
 import express, { Application, Request, Response } from 'express';
+require('dotenv').config();
 
 // Setup all LINE client and Express configurations.
 const clientConfig: ClientConfig = {
@@ -24,6 +25,7 @@ const app: Application = express();
 // Function handler to receive the text.
 const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponseBase | undefined> => {
   // Process all variables here.
+  // console.log(JSON.stringify(event))
   if (event.type !== 'message' || event.message.type !== 'text') {
     return;
   }
@@ -33,11 +35,16 @@ const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponse
   const { text } = event.message;
 
   // Create a new message.
-  const response: TextMessage = {
-    type: 'text',
-    text,
-  };
-
+  // const response: TextMessage = {
+  //   type: 'text',
+  //   text,
+  // };
+  const response: ImageMessage = {
+    type: "image",
+    previewImageUrl: "https://github.com/Mahesh95802/test-line-bot/blob/master/img/Capture.JPG",
+    originalContentUrl: "https://github.com/Mahesh95802/test-line-bot/blob/master/img/Capture.JPG"
+  }
+  // console.log(JSON.stringify(response))
   // Reply to the user.
   await client.replyMessage(replyToken, response);
 };
