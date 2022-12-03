@@ -1,7 +1,8 @@
 // Import all dependencies, mostly using destructuring for better view.
 import { ClientConfig, Client, middleware, MiddlewareConfig, WebhookEvent, TextMessage, MessageAPIResponseBase, ImageMessage } from '@line/bot-sdk';
 import express, { Application, Request, Response } from 'express';
-// require('dotenv').config();
+const QRCode = require('qrcode')
+require('dotenv').config();
 
 // Setup all LINE client and Express configurations.
 const clientConfig: ClientConfig = {
@@ -22,6 +23,16 @@ const client = new Client(clientConfig);
 // Create a new Express application.
 const app: Application = express();
 
+const qrCodeGenerator = async (data: string) => {
+  try{
+    console.log(data)
+    await QRCode.toFile("qrcode.jpeg", data)
+    return await QRCode.toDataURL(data)
+  } catch(err) {}
+  // console.log(qrCode)
+  // return qrCode;
+}
+
 // Function handler to receive the text.
 const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponseBase | undefined> => {
   // Process all variables here.
@@ -39,10 +50,21 @@ const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponse
   //   type: 'text',
   //   text,
   // };
-  const response: ImageMessage = {
-    type: "image",
-    previewImageUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png",
-    originalContentUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png"
+  const qrData = {
+    customerId: event.source.userId,
+    campaign: "This is me",
+    timestamp: Date.now()
+  }
+  const qrCode = await qrCodeGenerator(JSON.stringify(qrData))
+  // console.log("qrcode: ", qrCode)
+  // const response: ImageMessage = {
+  //   type: "image",
+  //   previewImageUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png",
+  //   originalContentUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png"
+  // }
+  const response: TextMessage = {
+    type: "text",
+    text: qrCode
   }
   // console.log(JSON.stringify(response))
   // Reply to the user.
