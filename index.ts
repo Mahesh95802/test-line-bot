@@ -1,7 +1,7 @@
 // Import all dependencies, mostly using destructuring for better view.
 import { ClientConfig, Client, middleware, MiddlewareConfig, WebhookEvent, TextMessage, MessageAPIResponseBase, ImageMessage } from '@line/bot-sdk';
 import express, { Application, Request, Response } from 'express';
-require('dotenv').config();
+// require('dotenv').config();
 
 // Setup all LINE client and Express configurations.
 const clientConfig: ClientConfig = {
