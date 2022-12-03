@@ -41,8 +41,8 @@ const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponse
   // };
   const response: ImageMessage = {
     type: "image",
-    previewImageUrl: "https://github.com/Mahesh95802/test-line-bot/blob/master/img/Capture.JPG",
-    originalContentUrl: "https://github.com/Mahesh95802/test-line-bot/blob/master/img/Capture.JPG"
+    previewImageUrl: "https://cdn.pixabay.com/photo/2013/07/12/14/45/qr-code-148732_960_720.png",
+    originalContentUrl: "https://cdn.pixabay.com/photo/2013/07/12/14/45/qr-code-148732_960_720.png"
   }
   // console.log(JSON.stringify(response))
   // Reply to the user.
