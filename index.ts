@@ -1,8 +1,15 @@
 // Import all dependencies, mostly using destructuring for better view.
 import { ClientConfig, Client, middleware, MiddlewareConfig, WebhookEvent, TextMessage, MessageAPIResponseBase, ImageMessage } from '@line/bot-sdk';
 import express, { Application, Request, Response } from 'express';
+
 const QRCode = require('qrcode')
 require('dotenv').config();
+const AWS = require("aws-sdk");
+// const s3 = new AWS.S3({
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// })
+const s3 = new AWS.S3()
 
 // Setup all LINE client and Express configurations.
 const clientConfig: ClientConfig = {
@@ -23,11 +30,49 @@ const client = new Client(clientConfig);
 // Create a new Express application.
 const app: Application = express();
 
-const qrCodeGenerator = async (data: string) => {
+const uploadFileToS3 = async (fileName: string, data: any) => {
+  try{
+    const buffer: Buffer = Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+    const type = data.split(';')[0].split('/')[1];
+    fileName = fileName + String(type);
+    console.log("Upload to S3 Started")
+    const uploadResp = await s3.upload({
+      Body: buffer,
+      ACL: 'public-read',
+      Bucket: process.env.AWS_S3_BUCKET_FILES,
+      Key: fileName,
+      ContentEncoding: 'base64',
+      ContentType: `image/${type}`
+    }).promise()
+  
+    console.log(JSON.stringify(uploadResp))
+    // console.log(JSON.stringify(uploadResp.Location))
+  
+    // get it back
+    // let image = await s3.getObject({
+    //   Bucket: process.env.AWS_S3_BUCKET_FILES,
+    //   Key: fileName,
+    // }).promise()
+    // console.log(image);
+    console.log("Uploadd to S3 Completed")
+    return uploadResp.Location;
+  } catch(err) {
+    console.log(err)
+    return "err"
+  }
+}
+
+const qrCodeGenerator = async (data: any) => {
   try{
     console.log(data)
-    await QRCode.toFile("qrcode.jpeg", data)
-    return await QRCode.toDataURL(data)
+    const imageFileName = String(data["customerId"]) + String(Date.now()) 
+    console.log(imageFileName)
+    data = JSON.stringify(data)
+    // await QRCode.toFile("qrcode.jpeg", data)
+    console.log("data Conversion Started")
+    const qrCodeData = await QRCode.toDataURL(data)
+    console.log("data Conversion Done")
+    return await uploadFileToS3(imageFileName, qrCodeData);
   } catch(err) {}
   // console.log(qrCode)
   // return qrCode;
@@ -55,20 +100,24 @@ const textEventHandler = async (event: WebhookEvent): Promise<MessageAPIResponse
     campaign: "This is me",
     timestamp: Date.now()
   }
-  const qrCode = await qrCodeGenerator(JSON.stringify(qrData))
+  const qrCodeURL = await qrCodeGenerator(qrData)
   // console.log("qrcode: ", qrCode)
-  // const response: ImageMessage = {
-  //   type: "image",
-  //   previewImageUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png",
-  //   originalContentUrl: "https://cdn.pixabay.com/photo/2021/12/12/16/10/qr-6865526_960_720.png"
-  // }
-  const response: TextMessage = {
-    type: "text",
-    text: qrCode
+  const responseImage: ImageMessage = {
+    type: "image",
+    previewImageUrl: qrCodeURL,
+    originalContentUrl: qrCodeURL
   }
+  // await client.replyMessage(replyToken, responseImage);
+  console.log("Image Response")
+  const responseText: TextMessage = {
+    type: "text",
+    text: qrCodeURL
+  }
+  console.log("Test Response STarted")
+  await client.replyMessage(replyToken, [responseImage, responseText]);
+  console.log("Test Response Done")
   // console.log(JSON.stringify(response))
   // Reply to the user.
-  await client.replyMessage(replyToken, response);
 };
 
 // Register the LINE middleware.
