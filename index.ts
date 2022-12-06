@@ -5,6 +5,8 @@ import express, { Application, Request, Response } from 'express';
 const QRCode = require('qrcode')
 require('dotenv').config();
 const AWS = require("aws-sdk");
+var eccrypto = require("eccrypto");
+
 // const s3 = new AWS.S3({
 //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -30,9 +32,33 @@ const client = new Client(clientConfig);
 // Create a new Express application.
 const app: Application = express();
 
+const encrypt = async (plainText: string, encryptionKey: any) => {
+  console.log(encryptionKey)
+  const encryptedText = await eccrypto.encrypt(encryptionKey, Buffer.from(plainText, 'base64'));
+  console.log(encryptedText)
+  return encryptedText.ciphertext.toString('base64')
+}
+
+const decrypt = async (encryptedText: string, decryptionKey: any) => {
+  console.log(decryptionKey)
+  const decryptedText = await eccrypto.decrypt(decryptionKey, Buffer.from(encryptedText, 'base64'));
+  console.log(decryptedText)
+  return decryptedText.plaintext.toString('base64')
+}
+
 const uploadFileToS3 = async (fileName: string, data: any) => {
   try{
-    const buffer: Buffer = Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+    let imageData = data.replace(/^data:image\/\w+;base64,/, "")
+    // const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, 'base64')
+    // const decryptionKey = Buffer.from(process.env.DECRYPTION_KEY, 'base64')
+    // // console.log(encryptionKey, decryptionKey)
+    // imageData = await encrypt(imageData, encryptionKey)
+    // console.log("E Image Data")
+    // console.log(imageData)
+    // let dec = await decrypt(imageData, decryptionKey)
+    // console.log("D Image Data")
+    // console.log(dec)
+    const buffer: Buffer = Buffer.from(imageData, 'base64');
     const type = data.split(';')[0].split('/')[1];
     fileName = fileName + String(type);
     console.log("Upload to S3 Started")
